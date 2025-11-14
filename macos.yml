@@ -1,0 +1,25 @@
+name: CryoAtom
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - numpy=1.24.3
+  - python=3.10
+  - pytorch=2.1.0
+  - torchvision=0.16.0
+  - torchaudio=2.1.0
+  - mkl=2023.0.0
+  - tqdm
+  - pip
+  - pip:
+      - einops==0.6.0
+      - scipy==1.11.0
+      - biopython==1.81
+      - matplotlib==3.7.2
+      - mrcfile==1.4.3
+      - pandas==2.0.3
+      - fair-esm
+      - pyhmmer
+      - openpyxl
+
+

@@ -1,7 +1,7 @@
 # CryoAtom
 <a >
    <img src="https://img.shields.io/badge/CryoAtom-v1.0.0-green">
-   <img src="https://img.shields.io/badge/platform-Linux-green">
+   <img src="https://img.shields.io/badge/platform-Linux%20%7C%20macOS-green">
    <img src="https://img.shields.io/badge/Language-python3-green">
    <img src="https://img.shields.io/badge/licence-MIT-green">
 </a>
@@ -16,13 +16,20 @@ It has two main stages: the first step predicts the C<span>&alpha;</span> atom c
 For more details on CryoAtom, please refer to the manuscript.
 
 ## Hardware requirements
-CryoAtom requires at least 3GB of disk space for its own weight files plus the weight files of the ESM language model. 
+CryoAtom requires at least 3GB of disk space for its own weight files plus the weight files of the ESM language model.
 It also requires at least 13GB of GPU memory.
+
+**Supported Platforms:**
+- **Linux**: NVIDIA GPUs with CUDA support
+- **macOS**: Apple Silicon Macs (M1/M2/M3/M4) with Metal GPU acceleration
+  - Requires macOS 12.3 or later
+  - Unified memory architecture provides efficient GPU access
+  - Recommended: 16GB+ unified memory for optimal performance
 
 ## Installation
 
 <details>
-<summary>Install CryoAtom</summary>
+<summary>Install CryoAtom on Linux</summary>
 <br>
 
 **Step 1: Install Conda**
@@ -57,6 +64,61 @@ Finally, you can run the command
 cryoatom build -h
 ```
 to check if the installation was successful.
+<br>
+</details>
+
+<details>
+<summary>Install CryoAtom on macOS (Apple Silicon)</summary>
+<br>
+
+**Step 1: Install Conda**
+
+Install conda to manage Python dependencies following https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html#regular-installation.
+
+For macOS, we recommend using Miniforge which is optimized for Apple Silicon:
+```
+curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+bash Miniforge3-MacOSX-arm64.sh
+```
+
+**Step 2: Clone this repository**
+
+Clone this Github repository:
+```
+git clone https://github.com/YangLab-SDU/CryoAtom.git
+```
+
+**Step 3: Verify Metal GPU Support**
+
+Ensure you're running macOS 12.3 or later and have an Apple Silicon chip (M1/M2/M3/M4):
+```
+sw_vers  # Check macOS version
+uname -m  # Should show "arm64" for Apple Silicon
+```
+
+**Step 4: Install CryoAtom**
+
+Navigate to the CryoAtom installation directory and run the macOS installation script:
+```
+cd CryoAtom
+source install_macos.sh
+```
+
+The installation script will automatically set up PyTorch with Metal Performance Shaders (MPS) support for GPU acceleration.
+
+Once the installation completes, verify the installation:
+```
+cryoatom build -h
+```
+
+To verify Metal GPU is available:
+```
+conda activate CryoAtom
+python -c "import torch; print('Metal GPU available:', torch.backends.mps.is_available())"
+```
+
+**Note:** CryoAtom will automatically detect and use Metal GPU acceleration. You can also explicitly specify the device with `-d mps`.
+
 <br>
 </details>   
     
@@ -126,14 +188,31 @@ Based on the premise of not knowing any specific sequences, this method can quic
 <summary>Specify GPU device and inference acceleration</summary>
 <br>
 
-If you want to specify the GPU number, you can set it using the parameter -d, for example, to specify GPU 3:
+If you want to specify the GPU device, you can set it using the parameter -d:
+
+**For NVIDIA GPUs (Linux):**
 ```
+cryoatom build -s protein.fasta -v map.mrc -o output_dir -d cuda:0
+# Or for a specific GPU number (e.g., GPU 3):
 cryoatom build -s protein.fasta -v map.mrc -o output_dir -d cuda:3
 ```
+
+**For Apple Silicon (macOS):**
+```
+cryoatom build -s protein.fasta -v map.mrc -o output_dir -d mps
+```
+
+**For CPU only:**
+```
+cryoatom build -s protein.fasta -v map.mrc -o output_dir -d cpu
+```
+
 If you want to infer 900 residues at once (the default is 300), you can set it using the parameter -n:
 ```
 cryoatom build -s protein.fasta -v map.mrc -o output_dir -n 900
 ```
+
+**Note:** The device auto-detection will automatically select the best available device (CUDA > MPS > CPU) if -d is not specified.
 </details> 
 
 <details>
@@ -292,6 +371,42 @@ Since the sequence attention module in CryNet takes up most of the time, the abo
 <br>
 
 This project is completely open-source and runs in a local environment, with all operations under the user's control. Therefore, CryoAtom ensures privacy and data security.
+</details>
+
+<details>
+<summary><strong>10. Can I use CryoAtom on macOS with Apple Silicon?</strong></summary>
+<br>
+
+**Yes!** CryoAtom now supports macOS with Apple Silicon (M1/M2/M3/M4) chips using Metal GPU acceleration through PyTorch's Metal Performance Shaders (MPS) backend.
+
+**Requirements:**
+- macOS 12.3 or later
+- Apple Silicon chip (M1/M2/M3/M4)
+- At least 16GB unified memory recommended (13GB+ for GPU operations)
+
+**Installation:**
+Follow the "Install CryoAtom on macOS (Apple Silicon)" instructions in the Installation section above. Use the `install_macos.sh` script instead of `install.sh`.
+
+**Performance Notes:**
+- Metal GPU acceleration provides significant speedup compared to CPU-only execution
+- Performance is comparable to NVIDIA GPUs for most operations
+- The unified memory architecture on Apple Silicon provides efficient data transfer between CPU and GPU
+- For large models, ensure you have sufficient unified memory (24GB+ for very large structures)
+
+**Usage:**
+CryoAtom will automatically detect and use Metal GPU if available. You can also explicitly specify:
+```
+cryoatom build -s protein.fasta -v map.mrc -o output -d mps
+```
+
+**Troubleshooting:**
+If Metal GPU is not being detected, verify your setup:
+```
+conda activate CryoAtom
+python -c "import torch; print('MPS available:', torch.backends.mps.is_available())"
+```
+
+If you encounter memory issues on Macs with limited RAM, try reducing the batch size using the `-n` parameter or adjusting `batch_size` in the config.json file.
 </details>
 
 ## Citation

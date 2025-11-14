@@ -182,9 +182,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--device",
         type=str,
-        default="compute device, pick one of {cpu, cuda:number}. "
-             "Default set to use cpu.",
-        help="The device to carry computations on",
+        default='cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'),
+        help="compute device, pick one of {cpu, cuda:number, mps}. "
+             "Default set to use cuda on NVIDIA GPUs, mps on Apple Silicon, or cpu.",
     )
     parser.add_argument(
         "--batch-size", type=int, default=1, help="Batch size for inference"

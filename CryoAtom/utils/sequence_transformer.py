@@ -221,7 +221,7 @@ def get_lm_embeddings_from_fasta(
     return lm_embeddings
 # lang_model,alphabet = esm.pretrained.esm1b_t33_650M_UR50S()
 # batch_convert = alphabet.get_batch_converter()
-# device = torch.device('cuda:4' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda:4' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'))
 # lang_model = lang_model.to(device)
 # a=get_lm_embeddings_from_protein(lang_model,batch_convert,'7u67.cif')
 # print(len(''.join(load_sequence('7u67.cif'))))

@@ -77,10 +77,10 @@ def add_args(parser):
         "--device",
         "-d",
         "--d",
-        help="compute device, pick one of {cpu, cuda:number}. "
-             "Default set to use cuda.",
+        help="compute device, pick one of {cpu, cuda:number, mps}. "
+             "Default set to use cuda on NVIDIA GPUs, mps on Apple Silicon, or cpu.",
         type=str,
-        default='cuda' if torch.cuda.is_available() else 'cpu',
+        default='cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'),
     )
     additional_args = parser.add_argument_group(
         "Additional arguments",
