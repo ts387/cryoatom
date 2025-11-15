@@ -73,6 +73,14 @@ def add_args(parser):
         type=str,
         default="output",
     )
+    # Determine default device with cross-platform compatibility
+    if torch.cuda.is_available():
+        default_device = 'cuda'
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        default_device = 'mps'
+    else:
+        default_device = 'cpu'
+
     main_args.add_argument(
         "--device",
         "-d",
@@ -80,7 +88,7 @@ def add_args(parser):
         help="compute device, pick one of {cpu, cuda:number, mps}. "
              "Default set to use cuda on NVIDIA GPUs, mps on Apple Silicon, or cpu.",
         type=str,
-        default='cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'),
+        default=default_device,
     )
     additional_args = parser.add_argument_group(
         "Additional arguments",

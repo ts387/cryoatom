@@ -179,10 +179,19 @@ if __name__ == "__main__":
         required=True,
         help="The C-alpha atoms ouput path",
     )
+
+    # Determine default device with cross-platform compatibility
+    if torch.cuda.is_available():
+        default_device = 'cuda'
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        default_device = 'mps'
+    else:
+        default_device = 'cpu'
+
     parser.add_argument(
         "--device",
         type=str,
-        default='cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'),
+        default=default_device,
         help="compute device, pick one of {cpu, cuda:number, mps}. "
              "Default set to use cuda on NVIDIA GPUs, mps on Apple Silicon, or cpu.",
     )
