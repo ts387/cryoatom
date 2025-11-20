@@ -144,6 +144,9 @@ def infer(args):
             pbar.update(1)
     pbar.close()
 
+    # Clear MPS cache if using Metal GPU to free memory
+    if device.type == 'mps' and hasattr(torch.mps, 'empty_cache'):
+        torch.mps.empty_cache()
 
     output_ca_points, output_ca_points_before_pruning = grid_to_points(
         pred,threshold=args.threshold,neighbour_distance_threshold=6/np.min(voxel_size)

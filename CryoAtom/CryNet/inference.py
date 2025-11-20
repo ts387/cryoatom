@@ -277,6 +277,10 @@ def infer(args):
 
     pbar.close()
 
+    # Clear MPS cache if using Metal GPU to free memory
+    if device.type == 'mps' and hasattr(torch.mps, 'empty_cache'):
+        torch.mps.empty_cache()
+
     final_results = get_final_nn_results(collated_results)
     output_path = os.path.join(args.output_dir, "model_net.cif")
     final_results_to_cif(

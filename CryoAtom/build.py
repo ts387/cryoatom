@@ -19,6 +19,76 @@ from CryoAtom.utils.fasta_utils import is_valid_fasta_ending
 from CryoAtom.utils.misc_utils import filter_useless_warnings, Args
 from CryoAtom.utils.hmmer_search import hmmer_search
 import time
+import platform
+
+def validate_and_setup_device(device_string):
+    """
+    Validate device string and ensure it's available on the current platform.
+    Provides helpful error messages if device is not available.
+
+    Returns:
+        torch.device: Validated PyTorch device object
+    """
+    try:
+        device = torch.device(device_string)
+    except RuntimeError as e:
+        raise RuntimeError(
+            f"Invalid device string '{device_string}'. "
+            f"Valid options: 'cpu', 'cuda', 'cuda:N' (where N is GPU number), or 'mps'. "
+            f"Error: {e}"
+        )
+
+    device_type = device.type
+
+    # Validate CUDA
+    if device_type == 'cuda':
+        if not torch.cuda.is_available():
+            raise RuntimeError(
+                f"CUDA device '{device_string}' requested but CUDA is not available.\n"
+                f"Possible solutions:\n"
+                f"  - Use CPU: add '-d cpu' to your command\n"
+                f"  - On macOS with Apple Silicon: use '-d mps'\n"
+                f"  - On Linux: ensure NVIDIA drivers and CUDA are properly installed"
+            )
+        if device.index is not None and device.index >= torch.cuda.device_count():
+            raise RuntimeError(
+                f"CUDA device '{device_string}' requested but only "
+                f"{torch.cuda.device_count()} GPU(s) available (0-{torch.cuda.device_count()-1})"
+            )
+
+    # Validate MPS (Metal Performance Shaders)
+    elif device_type == 'mps':
+        if not hasattr(torch.backends, 'mps'):
+            raise RuntimeError(
+                f"MPS (Metal GPU) device requested but not supported by your PyTorch version.\n"
+                f"MPS requires PyTorch 1.12 or later.\n"
+                f"Current PyTorch version: {torch.__version__}\n"
+                f"Possible solutions:\n"
+                f"  - Use CPU: add '-d cpu' to your command\n"
+                f"  - Update PyTorch: Follow macOS installation instructions"
+            )
+        if not torch.backends.mps.is_available():
+            system = platform.system()
+            if system != 'Darwin':
+                raise RuntimeError(
+                    f"MPS (Metal GPU) device requested but you're running on {system}.\n"
+                    f"MPS is only available on macOS with Apple Silicon.\n"
+                    f"Possible solutions:\n"
+                    f"  - Use CPU: add '-d cpu' to your command\n"
+                    f"  - On Linux with NVIDIA GPU: use '-d cuda'"
+                )
+            else:
+                raise RuntimeError(
+                    f"MPS (Metal GPU) device requested but not available on this Mac.\n"
+                    f"MPS requires:\n"
+                    f"  - macOS 12.3 or later\n"
+                    f"  - Apple Silicon chip (M1/M2/M3/M4)\n"
+                    f"Current system: {platform.platform()}\n"
+                    f"Architecture: {platform.machine()}\n"
+                    f"Possible solution: Use CPU with '-d cpu'"
+                )
+
+    return device
 
 def filter_chains(input_pdb_file, output_pdb_file, bfactor_threshold=50):
     if input_pdb_file.split(".")[-1][:3] == "pdb":
@@ -142,7 +212,9 @@ def main(parsed_args):
     start_time = time.time()
     filter_useless_warnings()
 
-    parsed_args.device = torch.device(parsed_args.device)
+    # Validate and setup device with comprehensive error checking
+    parsed_args.device = validate_and_setup_device(parsed_args.device)
+    print(f"Using device: {parsed_args.device}")
     if parsed_args.config_path:
         with open(parsed_args.config_path, "r") as f:
             config = json.load(f)
